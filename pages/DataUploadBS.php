@@ -1,13 +1,59 @@
 <?php
-$Buyer1		= isset($_POST['buyer']) ? $_POST['buyer'] : '';
-$Project	= isset($_POST['project']) ? $_POST['project'] : '';
-$POno		= isset($_POST['pono']) ? $_POST['pono'] : '';
-$Item		= isset($_POST['itemno']) ? $_POST['itemno'] : '';
-$NoWarna	= isset($_POST['warnano']) ? $_POST['warnano'] : '';
-$Zone		= isset($_POST['zone']) ? $_POST['zone'] : '';
+// Params
+$Buyer1  = isset($_POST['buyer']) ? $_POST['buyer'] : '';
+$Project = isset($_POST['project']) ? $_POST['project'] : '';
+$POno    = isset($_POST['pono']) ? $_POST['pono'] : '';
+$Item    = isset($_POST['itemno']) ? $_POST['itemno'] : '';
+$NoWarna = isset($_POST['warnano']) ? $_POST['warnano'] : '';
+$Zone    = isset($_POST['zone']) ? $_POST['zone'] : '';
+
+// Schema aliases
+$schema       = 'dbnow_gkj';
+$tblUploadBS  = "[$schema].[tbl_upload_bs]";
+$tblStokfullBS = "[$schema].[tbl_stokfull_bs]";
+
+// Helpers
+$sqlErrors = [];
+function formatSqlsrvDate($value) {
+    return ($value instanceof DateTime) ? $value->format('Y-m-d H:i:s') : $value;
+}
+function logSqlError($stmt, $label = '', $line = null) {
+    global $sqlErrors;
+    if ($stmt !== false) {
+        return;
+    }
+    $err = sqlsrv_errors();
+    if (!empty($err)) {
+        $msg = $label !== '' ? $label . ': ' : '';
+        if ($line !== null) {
+            $msg = "[line $line] " . $msg;
+        }
+        $msg .= $err[0]['message'];
+        $sqlErrors[] = $msg;
+        echo "<script>console.error('SQLSRV error: " . addslashes($msg) . "');</script>";
+    }
+}
+function fetchOrDefault($stmt, $default = [], $label = '', $line = null) {
+    if ($stmt === false) {
+        logSqlError($stmt, $label, $line);
+        return $default;
+    }
+    $row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
+    return $row ?: $default;
+}
 ?>
 <!-- Main content -->
       <div class="container-fluid">
+        <?php if (!empty($sqlErrors)) { ?>
+        <div class="alert alert-danger">
+            <strong>SQL Error:</strong>
+            <ul style="margin-bottom:0;">
+                <?php foreach ($sqlErrors as $errMsg) { ?>
+                    <li><?php echo htmlspecialchars($errMsg); ?></li>
+                <?php } ?>
+            </ul>
+        </div>
+        <?php } ?>
 		  
 	    <div class="card card-pink">
               <div class="card-header">
@@ -33,21 +79,30 @@ $Zone		= isset($_POST['zone']) ? $_POST['zone'] : '';
                   <tbody>
 				  <?php
 					$no=1; 
-					$sql=mysqli_query($con,"SELECT * FROM tbl_upload_bs ORDER BY id DESC");					  
-	  				while($rowd=mysqli_fetch_array($sql)){
-						$sql1=mysqli_query($con,"SELECT COUNT(*) AS JML FROM tbl_stokfull_bs WHERE id_upload='$rowd[id]'");					  
-	  					$rowd1=mysqli_fetch_array($sql1);
-						if($rowd['status']=="Open" and $rowd1['scek']==0){
+          $qryUpload = "SELECT * FROM $tblUploadBS ORDER BY id DESC";
+					$sql = sqlsrv_query($con, $qryUpload, [], ["Scrollable" => SQLSRV_CURSOR_KEYSET]);					  
+          logSqlError($sql, 'list upload bs', __LINE__);
+	  				while($sql && ($rowd = sqlsrv_fetch_array($sql, SQLSRV_FETCH_ASSOC))){
+            $qryCount = "SELECT COUNT(*) AS JML FROM $tblStokfullBS WHERE id_upload=?";
+						$sql1 = sqlsrv_query(
+              $con,
+              $qryCount,
+              [$rowd['id']],
+              ["Scrollable" => SQLSRV_CURSOR_KEYSET]
+            );					  
+            logSqlError($sql1, 'count stokfull bs per upload', __LINE__);
+	  					$rowd1 = fetchOrDefault($sql1, ['JML'=>0], 'fetch stokfull bs per upload', __LINE__);
+						if($rowd['status']=="Open" and (isset($rowd1['JML']) ? $rowd1['JML'] : 0)==0){
 							$stts="<small class='badge badge-success '><i class='far fa-clock'></i> Open</small>";
-						}else if($rowd['status']=="Open" and $rowd1['scek']>0){
+						}else if($rowd['status']=="Open" and (isset($rowd1['JML']) ? $rowd1['JML'] : 0)>0){
 							$stts="<a href='#' id='".$rowd['id']."' class='show_editstatus'><small class='badge badge-warning'><i class='far fa-clock'></i> Open, In Progress</small></a>";
 						}else{
 							$stts="<a href='#' id='".$rowd['id']."' class='show_editstatus'><small class='badge badge-danger'><i class='far fa-clock'></i> Closed</small></a>";
 						}
 		  		  ?>
-				  	<tr>
+				  		<tr>
                     <td style="text-align: center"><?php echo $no;?></td>
-                    <td style="text-align: center"><?php echo $rowd['tgl_upload'];?></td>
+                    <td style="text-align: center"><?php echo formatSqlsrvDate($rowd['tgl_upload']);?></td>
                     <td style="text-align: center"><?php echo $rowd['nama_file'];?></td>
                     <td style="text-align: center"><?php echo $rowd1['JML'];?></td>
                     <td style="text-align: center"><a href="CheckStockBS-<?php echo $rowd['id'];?>" class="btn btn-xs btn-info"><small class="fas fa-link"> </small></a></td>

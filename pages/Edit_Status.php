@@ -1,16 +1,28 @@
 <?php
 include("../koneksi.php");
-if($_POST){ 
-	extract($_POST);
-	$id = mysqli_real_escape_string($con,$_POST['id']);
-	$sts = mysqli_real_escape_string($con,$_POST['sts']);
-	if($sts=="Closed"){
-		$tglClsd=" , tgl_closed=now() ";
-	}else{
-		$tglClsd=" , tgl_closed=NULL ";
-	}
-	mysqli_query($con, "UPDATE tbl_upload SET `status`='$sts' $tglClsd WHERE id='$id'");
-	echo "<script type=\"text/javascript\">
+
+$schema    = 'dbnow_gkj';
+$tblUpload = "[$schema].[tbl_upload]";
+
+if ($_POST) {
+    $id  = isset($_POST['id']) ? $_POST['id'] : '';
+    $sts = isset($_POST['sts']) ? $_POST['sts'] : '';
+
+    if ($sts == "Closed") {
+        $qryUpdate = "UPDATE $tblUpload SET status=?, tgl_closed=GETDATE() WHERE id=?";
+    } else {
+        $qryUpdate = "UPDATE $tblUpload SET status=?, tgl_closed=NULL WHERE id=?";
+    }
+
+    $stmt = sqlsrv_query($con, $qryUpdate, [$sts, $id]);
+    if ($stmt === false) {
+        $err = sqlsrv_errors();
+        $msg = $err[0]['message'] ?? 'Unknown error';
+        echo "<script>alert('Gagal update status: $msg'); window.location='DataUpload';</script>";
+        exit;
+    }
+
+    echo "<script type=\"text/javascript\">
             window.location = \"DataUpload\"
       </script>";
 }

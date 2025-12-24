@@ -22,12 +22,29 @@ else{
     exit("DB2 Connection failed");
     }
 
-//$con=mysqli_connect("10.0.0.10","dit","4dm1n","db_dying");
 $cond=mysqli_connect("10.0.0.10","dit","4dm1n","db_qc");
-$con=mysqli_connect("10.0.0.10","dit","4dm1n","dbnow_gkj");
-if (mysqli_connect_errno()) {
-printf("Connect failed: %s\n", mysqli_connect_error());
-exit();
-} 
+if ($cond === false) {
+    exit("MySQL db_qc connection failed: " . mysqli_connect_error());
+}
+
+$hostSVR19     = "10.0.0.221";
+$usernameSVR19 = "sa";
+$passwordSVR19 = "Ind@taichen2024";
+$dbnow_gdb     = "dbnow_gkj";
+$connInfoNowgkj = array(
+    "Database" => $dbnow_gdb,
+    "UID"      => $usernameSVR19,
+    "PWD"      => $passwordSVR19,
+    "CharacterSet" => "UTF-8"
+);
+$con = sqlsrv_connect($hostSVR19, $connInfoNowgkj);
+if ($con === false) {
+    $error = sqlsrv_errors();
+    $message = "SQL Server dbnow_gkj connection failed";
+    if (!empty($error)) {
+        $message .= ": " . $error[0]['message'];
+    }
+    exit($message);
+}
 
 ?>

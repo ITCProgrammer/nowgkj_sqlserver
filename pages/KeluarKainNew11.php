@@ -47,7 +47,7 @@ $Awal = isset($_POST['tgl_awal']) ? $_POST['tgl_awal'] : '';
   <?php if ($Awal != "") {
     $tomrw = $Awal . " 23:00:00";
     $tody = date('Y-m-d', strtotime($Awal . "-1 days")) . " 23:00:00";
-    ?>
+  ?>
     <div class="card card-pink">
       <div class="card-header">
         <h3 class="card-title">Data Laporan Harian Pengiriman New</h3>
@@ -78,50 +78,47 @@ $Awal = isset($_POST['tgl_awal']) ? $_POST['tgl_awal'] : '';
             <?php
             $no = 1;
             $c = 0;
-            $sqlDB21 = " 
-		  SELECT
-	DISTINCT DERIVATIONCODE,	  
-	SUM(BASEPRIMARYQUANTITY) AS KG,
-	ORDERCODE AS NOSJ,
-	ORDERLINE,
-	PROJECTCODE,
-	DECOSUBCODE01,
-	DECOSUBCODE02,
-	DECOSUBCODE03,
-	DECOSUBCODE04,
-	DECOSUBCODE05,
-	DECOSUBCODE06,
-	DECOSUBCODE07,
-	DECOSUBCODE08,
-	DECOSUBCODE09,
-	DECOSUBCODE10, 
-	CONCAT(TRANSACTIONDATE, CONCAT(' ', TRANSACTIONTIME)) AS TGL
-FROM
-	STOCKTRANSACTION
-WHERE
-	TEMPLATECODE = 'S02'
-	AND CREATIONDATETIME BETWEEN '$tody' AND '$tomrw'
-	AND ITEMTYPECODE = 'KFF'
-	AND LOGICALWAREHOUSECODE = 'M031'
-GROUP BY 
-	DERIVATIONCODE,
-	ORDERCODE,
-	ORDERLINE,
-	PROJECTCODE,
-	DECOSUBCODE01,
-	DECOSUBCODE02,
-	DECOSUBCODE03,
-	DECOSUBCODE04,
-	DECOSUBCODE05,
-	DECOSUBCODE06,
-	DECOSUBCODE07,
-	DECOSUBCODE08,
-	DECOSUBCODE09,
-	DECOSUBCODE10,
-	TRANSACTIONDATE,
-	TRANSACTIONTIME
-	
-		  ";
+            $sqlDB21 = "SELECT
+                          DISTINCT DERIVATIONCODE,	  
+                          SUM(BASEPRIMARYQUANTITY) AS KG,
+                          ORDERCODE AS NOSJ,
+                          ORDERLINE,
+                          PROJECTCODE,
+                          DECOSUBCODE01,
+                          DECOSUBCODE02,
+                          DECOSUBCODE03,
+                          DECOSUBCODE04,
+                          DECOSUBCODE05,
+                          DECOSUBCODE06,
+                          DECOSUBCODE07,
+                          DECOSUBCODE08,
+                          DECOSUBCODE09,
+                          DECOSUBCODE10, 
+                          CONCAT(TRANSACTIONDATE, CONCAT(' ', TRANSACTIONTIME)) AS TGL
+                        FROM
+                          STOCKTRANSACTION
+                        WHERE
+                          TEMPLATECODE = 'S02'
+                          AND CREATIONDATETIME BETWEEN '$tody' AND '$tomrw'
+                          AND ITEMTYPECODE = 'KFF'
+                          AND LOGICALWAREHOUSECODE = 'M031'
+                        GROUP BY 
+                          DERIVATIONCODE,
+                          ORDERCODE,
+                          ORDERLINE,
+                          PROJECTCODE,
+                          DECOSUBCODE01,
+                          DECOSUBCODE02,
+                          DECOSUBCODE03,
+                          DECOSUBCODE04,
+                          DECOSUBCODE05,
+                          DECOSUBCODE06,
+                          DECOSUBCODE07,
+                          DECOSUBCODE08,
+                          DECOSUBCODE09,
+                          DECOSUBCODE10,
+                          TRANSACTIONDATE,
+                          TRANSACTIONTIME";
             $stmt1 = db2_exec($conn1, $sqlDB21, array('cursor' => DB2_SCROLLABLE));
             //}
             while ($rowdb21 = db2_fetch_assoc($stmt1)) {
@@ -136,11 +133,11 @@ GROUP BY
                 $foc = "";
               }
               $sqlDB22 = "SELECT SALESORDERLINE.ORDERLINE, SALESORDERLINE.EXTERNALREFERENCE AS NOPO, SALESORDER.CODE, SALESORDER.EXTERNALREFERENCE, SALESORDER.ORDPRNCUSTOMERSUPPLIERCODE,
-		ITXVIEWAKJ.LEGALNAME1, ITXVIEWAKJ.ORDERPARTNERBRANDCODE, ITXVIEWAKJ.LONGDESCRIPTION, SALESORDERLINE.ITEMDESCRIPTION
-		FROM DB2ADMIN.SALESORDER SALESORDER LEFT OUTER JOIN DB2ADMIN.ITXVIEWAKJ
-       	ITXVIEWAKJ ON SALESORDER.CODE=ITXVIEWAKJ.CODE
-       	LEFT OUTER JOIN DB2ADMIN.SALESORDERLINE ON SALESORDER.CODE=SALESORDERLINE.SALESORDERCODE
-		WHERE SALESORDER.CODE='$project' AND SALESORDERLINE.ORDERLINE='" . $rowdb21['ORDERLINE'] . "'";
+                          ITXVIEWAKJ.LEGALNAME1, ITXVIEWAKJ.ORDERPARTNERBRANDCODE, ITXVIEWAKJ.LONGDESCRIPTION, SALESORDERLINE.ITEMDESCRIPTION
+                          FROM DB2ADMIN.SALESORDER SALESORDER LEFT OUTER JOIN DB2ADMIN.ITXVIEWAKJ
+                              ITXVIEWAKJ ON SALESORDER.CODE=ITXVIEWAKJ.CODE
+                              LEFT OUTER JOIN DB2ADMIN.SALESORDERLINE ON SALESORDER.CODE=SALESORDERLINE.SALESORDERCODE
+                          WHERE SALESORDER.CODE='$project' AND SALESORDERLINE.ORDERLINE='" . $rowdb21['ORDERLINE'] . "'";
               $stmt2 = db2_exec($conn1, $sqlDB22, array('cursor' => DB2_SCROLLABLE));
               $rowdb22 = db2_fetch_assoc($stmt2);
               if ($rowdb22['LEGALNAME1'] == "") {
@@ -160,22 +157,21 @@ GROUP BY
               }
 
               $sqlDB23 = " SELECT COUNT(BASEPRIMARYQUANTITY) AS ROL,SUM(BASEPRIMARYQUANTITY) AS KG,
-    LISTAGG(DISTINCT  TRIM(LOTCODE),', ') AS LOTCODE,LISTAGG(DISTINCT  TRIM(WHSLOCATIONWAREHOUSEZONECODE),', ') AS ZN, LISTAGG(DISTINCT TRIM(WAREHOUSELOCATIONCODE),', ') AS LK,
-    ITEMTYPECODE, DECOSUBCODE01, DECOSUBCODE02, DECOSUBCODE03, DECOSUBCODE04, DECOSUBCODE05, DECOSUBCODE06, DECOSUBCODE07, DECOSUBCODE08
-    FROM ITXVIEW_ALLOCATION_SURATJALAN_PPC
-		WHERE ITXVIEW_ALLOCATION_SURATJALAN_PPC.CODE='$rowdb21[DERIVATIONCODE]'
-    GROUP BY ITEMTYPECODE, DECOSUBCODE01, DECOSUBCODE02, DECOSUBCODE03, DECOSUBCODE04, DECOSUBCODE05, DECOSUBCODE06, DECOSUBCODE07, DECOSUBCODE08";
+                          LISTAGG(DISTINCT  TRIM(LOTCODE),', ') AS LOTCODE,LISTAGG(DISTINCT  TRIM(WHSLOCATIONWAREHOUSEZONECODE),', ') AS ZN, LISTAGG(DISTINCT TRIM(WAREHOUSELOCATIONCODE),', ') AS LK,
+                          ITEMTYPECODE, DECOSUBCODE01, DECOSUBCODE02, DECOSUBCODE03, DECOSUBCODE04, DECOSUBCODE05, DECOSUBCODE06, DECOSUBCODE07, DECOSUBCODE08
+                          FROM ITXVIEW_ALLOCATION_SURATJALAN_PPC
+                          WHERE ITXVIEW_ALLOCATION_SURATJALAN_PPC.CODE='$rowdb21[DERIVATIONCODE]'
+                          GROUP BY ITEMTYPECODE, DECOSUBCODE01, DECOSUBCODE02, DECOSUBCODE03, DECOSUBCODE04, DECOSUBCODE05, DECOSUBCODE06, DECOSUBCODE07, DECOSUBCODE08";
               $stmt3 = db2_exec($conn1, $sqlDB23, array('cursor' => DB2_SCROLLABLE));
               $rowdb23 = db2_fetch_assoc($stmt3);
               $itemCode = $rowdb23['ITEMTYPECODE'] . " " . $rowdb23['DECOSUBCODE01'] . "" . $rowdb23['DECOSUBCODE02'] . "" . $rowdb23['DECOSUBCODE03'] . "" . $rowdb23['DECOSUBCODE04'] . "" . $rowdb23['DECOSUBCODE05'] . "" . $rowdb23['DECOSUBCODE06'] . "" . $rowdb23['DECOSUBCODE07'] . "" . $rowdb23['DECOSUBCODE08'];
               $sqlDB24 = " SELECT PRODUCT.SHORTDESCRIPTION FROM PRODUCT WHERE
-		ITEMTYPECODE='$rowdb23[ITEMTYPECODE]' AND
-		SUBCODE01='$rowdb23[DECOSUBCODE01]' AND
-		SUBCODE02='$rowdb23[DECOSUBCODE02]' AND
-		SUBCODE03='$rowdb23[DECOSUBCODE03]' AND
-		SUBCODE04='$rowdb23[DECOSUBCODE04]' AND
-		SUBCODE05='$rowdb23[DECOSUBCODE05]'
-		";
+                            ITEMTYPECODE='$rowdb23[ITEMTYPECODE]' AND
+                            SUBCODE01='$rowdb23[DECOSUBCODE01]' AND
+                            SUBCODE02='$rowdb23[DECOSUBCODE02]' AND
+                            SUBCODE03='$rowdb23[DECOSUBCODE03]' AND
+                            SUBCODE04='$rowdb23[DECOSUBCODE04]' AND
+                            SUBCODE05='$rowdb23[DECOSUBCODE05]'";
               $stmt4 = db2_exec($conn1, $sqlDB24, array('cursor' => DB2_SCROLLABLE));
               $rowdb24 = db2_fetch_assoc($stmt4);
 
@@ -183,36 +179,36 @@ GROUP BY
               ITXVIEWRESEPCOLOR.NO_WARNA='".trim($rowdb23['DECOSUBCODE05'])."' AND
               ITXVIEWRESEPCOLOR.ARTIKEL='".trim($rowdb23['DECOSUBCODE03'])."' ";*/
               $sqlDB25 = "SELECT i.WARNA FROM ITXVIEWCOLOR i
-LEFT OUTER JOIN PRODUCT p ON
-i.ITEMTYPECODE =p.ITEMTYPECODE AND
-i.SUBCODE01 = p.SUBCODE01 AND
-i.SUBCODE02 = p.SUBCODE02 AND
-i.SUBCODE03 = p.SUBCODE03 AND
-i.SUBCODE04 = p.SUBCODE04 AND
-i.SUBCODE05 = p.SUBCODE05 AND
-i.SUBCODE06 = p.SUBCODE06 AND
-i.SUBCODE07 = p.SUBCODE07 AND
-i.SUBCODE08 = p.SUBCODE08
-WHERE
-		i.SUBCODE01='" . trim($rowdb23['DECOSUBCODE01']) . "' AND
-		i.SUBCODE02='" . trim($rowdb23['DECOSUBCODE02']) . "' AND
-		i.SUBCODE03='" . trim($rowdb23['DECOSUBCODE03']) . "' AND
-		i.SUBCODE04='" . trim($rowdb23['DECOSUBCODE04']) . "' AND
-		i.SUBCODE05='" . trim($rowdb23['DECOSUBCODE05']) . "' AND
-		i.SUBCODE06='" . trim($rowdb23['DECOSUBCODE06']) . "' AND
-		i.SUBCODE07='" . trim($rowdb23['DECOSUBCODE07']) . "' AND
-		i.SUBCODE08 ='" . trim($rowdb23['DECOSUBCODE08']) . "'";
+                          LEFT OUTER JOIN PRODUCT p ON
+                          i.ITEMTYPECODE =p.ITEMTYPECODE AND
+                          i.SUBCODE01 = p.SUBCODE01 AND
+                          i.SUBCODE02 = p.SUBCODE02 AND
+                          i.SUBCODE03 = p.SUBCODE03 AND
+                          i.SUBCODE04 = p.SUBCODE04 AND
+                          i.SUBCODE05 = p.SUBCODE05 AND
+                          i.SUBCODE06 = p.SUBCODE06 AND
+                          i.SUBCODE07 = p.SUBCODE07 AND
+                          i.SUBCODE08 = p.SUBCODE08
+                          WHERE
+                              i.SUBCODE01='" . trim($rowdb23['DECOSUBCODE01']) . "' AND
+                              i.SUBCODE02='" . trim($rowdb23['DECOSUBCODE02']) . "' AND
+                              i.SUBCODE03='" . trim($rowdb23['DECOSUBCODE03']) . "' AND
+                              i.SUBCODE04='" . trim($rowdb23['DECOSUBCODE04']) . "' AND
+                              i.SUBCODE05='" . trim($rowdb23['DECOSUBCODE05']) . "' AND
+                              i.SUBCODE06='" . trim($rowdb23['DECOSUBCODE06']) . "' AND
+                              i.SUBCODE07='" . trim($rowdb23['DECOSUBCODE07']) . "' AND
+                              i.SUBCODE08 ='" . trim($rowdb23['DECOSUBCODE08']) . "'";
               $stmt5 = db2_exec($conn1, $sqlDB25, array('cursor' => DB2_SCROLLABLE));
               $rowdb25 = db2_fetch_assoc($stmt5);
 
               $sqlDB26 = " SELECT DESIGN.SUBCODE01,
-	   DESIGNCOMPONENT.VARIANTCODE,
-       DESIGNCOMPONENT.SHORTDESCRIPTION
-	   FROM DB2ADMIN.DESIGN DESIGN LEFT OUTER JOIN DB2ADMIN.DESIGNCOMPONENT
-       DESIGNCOMPONENT ON DESIGN.NUMBERID=DESIGNCOMPONENT.DESIGNNUMBERID AND
-       DESIGN.SUBCODE01=DESIGNCOMPONENT.DESIGNSUBCODE01
-	   WHERE DESIGN.SUBCODE01='$rowdb23[DECOSUBCODE07]' AND
-	   DESIGNCOMPONENT.VARIANTCODE='$rowdb23[DECOSUBCODE08]' ";
+                            DESIGNCOMPONENT.VARIANTCODE,
+                              DESIGNCOMPONENT.SHORTDESCRIPTION
+                            FROM DB2ADMIN.DESIGN DESIGN LEFT OUTER JOIN DB2ADMIN.DESIGNCOMPONENT
+                              DESIGNCOMPONENT ON DESIGN.NUMBERID=DESIGNCOMPONENT.DESIGNNUMBERID AND
+                              DESIGN.SUBCODE01=DESIGNCOMPONENT.DESIGNSUBCODE01
+                            WHERE DESIGN.SUBCODE01='$rowdb23[DECOSUBCODE07]' AND
+                            DESIGNCOMPONENT.VARIANTCODE='$rowdb23[DECOSUBCODE08]' ";
               $stmt6 = db2_exec($conn1, $sqlDB26, array('cursor' => DB2_SCROLLABLE));
               $rowdb26 = db2_fetch_assoc($stmt6);
               if (trim($rowdb23['ITEMTYPECODE']) == "FKF") {
@@ -223,7 +219,7 @@ WHERE
               } else if (trim($rowdb23['DECOSUBCODE07']) != "-" and trim($rowdb23['DECOSUBCODE08']) != "-") {
                 $warna = $rowdb26['SHORTDESCRIPTION'];
               }
-              ?>
+            ?>
               <tr>
                 <td style="text-align: center">
                   <?php echo $no; ?>
@@ -271,7 +267,7 @@ WHERE
                   <?php echo $foc; ?>
                 </td>
               </tr>
-              <?php
+            <?php
               $no++;
               $totalRoll += $rowdb23['ROL'];
               $totalKG += round($rowdb23['KG'], 2);
@@ -386,7 +382,7 @@ WHERE
                 trim($rowdb21_bongkaran['DECOSUBCODE06']) . " " .
                 trim($rowdb21_bongkaran['DECOSUBCODE07']) . " " .
                 trim($rowdb21_bongkaran['DECOSUBCODE08']);
-              ?>
+            ?>
               <tr>
                 <td style="text-align: center">
                   <?php echo $no_bongkaran; ?>
@@ -419,7 +415,7 @@ WHERE
                   <?php echo $rowdb21_bongkaran['CREATIONUSER']; ?>
                 </td>
               </tr>
-              <?php $no_bongkaran++;
+            <?php $no_bongkaran++;
               $totJml_bongkaran += $rowdb21_bongkaran['JML'];
               $totKg_bongkaran += $rowdb21_bongkaran['KG'];
             } ?>
@@ -476,41 +472,41 @@ WHERE
             $no_bongkaran_returan = 1;
             $c = 0;
             $sqlDB21_bongkaran_returan = "SELECT
-                        s.CREATIONUSER,
-                        s.TRANSACTIONDATE,
-                        s.ORDERCODE,
-                        s.DECOSUBCODE02,
-                        s.DECOSUBCODE03,
-                        s.DECOSUBCODE04,
-                        s.DECOSUBCODE05,
-                        s.DECOSUBCODE06,
-                        s.DECOSUBCODE07,
-                        s.DECOSUBCODE08,
-                        s.LOTCODE,
-                        SUM(s.BASEPRIMARYQUANTITY) AS KG,
-                        s.ITEMELEMENTCODE,
-                        COUNT(s.ITEMELEMENTCODE) AS JML,
-                        s.PROJECTCODE
-                      FROM STOCKTRANSACTION s
-                      WHERE s.ITEMTYPECODE='KFF'
-                      AND s.LOGICALWAREHOUSECODE ='M031'
-                      AND s.WHSLOCATIONWAREHOUSEZONECODE = 'TMP'
-                      AND s.TEMPLATECODE = '120' 
-                      AND TIMESTAMP(TRIM(s.TRANSACTIONDATE),TRIM(s.TRANSACTIONTIME) ) BETWEEN '$tody' AND '$tomrw'
-                      GROUP BY
-                        s.TRANSACTIONDATE,
-                        s.ORDERCODE,
-                        s.DECOSUBCODE02,
-                        s.DECOSUBCODE03,
-                        s.DECOSUBCODE04,
-                        s.DECOSUBCODE05,
-                        s.DECOSUBCODE06,
-                        s.DECOSUBCODE07,
-                        s.DECOSUBCODE08,
-                        s.LOTCODE,
-                        s.CREATIONUSER,
-                        s.PROJECTCODE,
-                        s.ITEMELEMENTCODE ";
+                                          s.CREATIONUSER,
+                                          s.TRANSACTIONDATE,
+                                          s.ORDERCODE,
+                                          s.DECOSUBCODE02,
+                                          s.DECOSUBCODE03,
+                                          s.DECOSUBCODE04,
+                                          s.DECOSUBCODE05,
+                                          s.DECOSUBCODE06,
+                                          s.DECOSUBCODE07,
+                                          s.DECOSUBCODE08,
+                                          s.LOTCODE,
+                                          SUM(s.BASEPRIMARYQUANTITY) AS KG,
+                                          s.ITEMELEMENTCODE,
+                                          COUNT(s.ITEMELEMENTCODE) AS JML,
+                                          s.PROJECTCODE
+                                        FROM STOCKTRANSACTION s
+                                        WHERE s.ITEMTYPECODE='KFF'
+                                        AND s.LOGICALWAREHOUSECODE ='M031'
+                                        AND s.WHSLOCATIONWAREHOUSEZONECODE = 'TMP'
+                                        AND s.TEMPLATECODE = '120' 
+                                        AND TIMESTAMP(TRIM(s.TRANSACTIONDATE),TRIM(s.TRANSACTIONTIME) ) BETWEEN '$tody' AND '$tomrw'
+                                        GROUP BY
+                                          s.TRANSACTIONDATE,
+                                          s.ORDERCODE,
+                                          s.DECOSUBCODE02,
+                                          s.DECOSUBCODE03,
+                                          s.DECOSUBCODE04,
+                                          s.DECOSUBCODE05,
+                                          s.DECOSUBCODE06,
+                                          s.DECOSUBCODE07,
+                                          s.DECOSUBCODE08,
+                                          s.LOTCODE,
+                                          s.CREATIONUSER,
+                                          s.PROJECTCODE,
+                                          s.ITEMELEMENTCODE ";
             $stmt1_bongkaran_returan = db2_exec($conn1, $sqlDB21_bongkaran_returan, array('cursor' => DB2_SCROLLABLE));
             //}
             while ($rowdb21_bongkaran_returan = db2_fetch_assoc($stmt1_bongkaran_returan)) {
@@ -522,7 +518,7 @@ WHERE
                 trim($rowdb21_bongkaran_returan['DECOSUBCODE06']) . " " .
                 trim($rowdb21_bongkaran_returan['DECOSUBCODE07']) . " " .
                 trim($rowdb21_bongkaran_returan['DECOSUBCODE08']);
-              ?>
+            ?>
               <tr>
                 <td style="text-align: center">
                   <?php echo $no_bongkaran_returan; ?>
@@ -555,7 +551,7 @@ WHERE
                   <?php echo $rowdb21_bongkaran_returan['CREATIONUSER']; ?>
                 </td>
               </tr>
-              <?php $no_bongkaran_returan++;
+            <?php $no_bongkaran_returan++;
               $totJml_bongkaran_returan += $rowdb21_bongkaran_returan['JML'];
               $totKg_bongkaran_returan += $rowdb21_bongkaran_returan['KG'];
             } ?>
@@ -613,44 +609,44 @@ WHERE
             $c = 0;
 
             $sqlDB21_pass_qty = " SELECT
-                        s.CREATIONUSER,
-                        s.TRANSACTIONDATE,
-                        s.DECOSUBCODE02,
-                        s.DECOSUBCODE03,
-                        s.DECOSUBCODE04,
-                        s.DECOSUBCODE05,
-                        s.DECOSUBCODE06,
-                        s.DECOSUBCODE07,
-                        s.DECOSUBCODE08,
-                        s.LOTCODE,
-                        SUM(s.BASEPRIMARYQUANTITY) AS KG,
-                        SUM(s.BASESECONDARYQUANTITY) AS YARD,
-                        s.ITEMELEMENTCODE,
-                        COUNT(s.ITEMELEMENTCODE) AS JML,
-                        a.VALUESTRING AS PTG,
-                        a1.VALUESTRING as NOTE,
-                        s.PROJECTCODE
-                      FROM STOCKTRANSACTION s
-                      LEFT OUTER JOIN ADSTORAGE a ON a.UNIQUEID = s.ABSUNIQUEID AND a.NAMENAME = 'StatusPotongS'
-                      LEFT OUTER JOIN ADSTORAGE a1 ON a1.UNIQUEID = s.ABSUNIQUEID AND a1.NAMENAME = 'NotePotongS'
-                      WHERE s.ITEMTYPECODE='KFF' AND s.LOGICALWAREHOUSECODE ='M031'
-                        AND a.VALUESTRING ='2' AND s.TEMPLATECODE = '098'
-                        AND TIMESTAMP(TRIM(s.TRANSACTIONDATE),TRIM(s.TRANSACTIONTIME) ) BETWEEN '$tody' AND '$tomrw'
-                      GROUP BY
-                        s.TRANSACTIONDATE,
-                        s.DECOSUBCODE02,
-                        s.DECOSUBCODE03,
-                        s.DECOSUBCODE04,
-                        s.DECOSUBCODE05,
-                        s.DECOSUBCODE06,
-                        s.DECOSUBCODE07,
-                        s.DECOSUBCODE08,
-                        s.LOTCODE,
-                        s.CREATIONUSER,
-                        a.VALUESTRING,
-                        s.PROJECTCODE,
-                        a1.VALUESTRING,
-                        s.ITEMELEMENTCODE ";
+                                  s.CREATIONUSER,
+                                  s.TRANSACTIONDATE,
+                                  s.DECOSUBCODE02,
+                                  s.DECOSUBCODE03,
+                                  s.DECOSUBCODE04,
+                                  s.DECOSUBCODE05,
+                                  s.DECOSUBCODE06,
+                                  s.DECOSUBCODE07,
+                                  s.DECOSUBCODE08,
+                                  s.LOTCODE,
+                                  SUM(s.BASEPRIMARYQUANTITY) AS KG,
+                                  SUM(s.BASESECONDARYQUANTITY) AS YARD,
+                                  s.ITEMELEMENTCODE,
+                                  COUNT(s.ITEMELEMENTCODE) AS JML,
+                                  a.VALUESTRING AS PTG,
+                                  a1.VALUESTRING as NOTE,
+                                  s.PROJECTCODE
+                                FROM STOCKTRANSACTION s
+                                LEFT OUTER JOIN ADSTORAGE a ON a.UNIQUEID = s.ABSUNIQUEID AND a.NAMENAME = 'StatusPotongS'
+                                LEFT OUTER JOIN ADSTORAGE a1 ON a1.UNIQUEID = s.ABSUNIQUEID AND a1.NAMENAME = 'NotePotongS'
+                                WHERE s.ITEMTYPECODE='KFF' AND s.LOGICALWAREHOUSECODE ='M031'
+                                  AND a.VALUESTRING ='2' AND s.TEMPLATECODE = '098'
+                                  AND TIMESTAMP(TRIM(s.TRANSACTIONDATE),TRIM(s.TRANSACTIONTIME) ) BETWEEN '$tody' AND '$tomrw'
+                                GROUP BY
+                                  s.TRANSACTIONDATE,
+                                  s.DECOSUBCODE02,
+                                  s.DECOSUBCODE03,
+                                  s.DECOSUBCODE04,
+                                  s.DECOSUBCODE05,
+                                  s.DECOSUBCODE06,
+                                  s.DECOSUBCODE07,
+                                  s.DECOSUBCODE08,
+                                  s.LOTCODE,
+                                  s.CREATIONUSER,
+                                  a.VALUESTRING,
+                                  s.PROJECTCODE,
+                                  a1.VALUESTRING,
+                                  s.ITEMELEMENTCODE ";
 
             $stmt1_pass_qty = db2_exec($conn1, $sqlDB21_pass_qty, array('cursor' => DB2_SCROLLABLE));
             //}
@@ -663,7 +659,7 @@ WHERE
                 trim($rowdb21_pass_qty['DECOSUBCODE06']) . " " .
                 trim($rowdb21_pass_qty['DECOSUBCODE07']) . " " .
                 trim($rowdb21_pass_qty['DECOSUBCODE08']);
-              ?>
+            ?>
               <tr>
                 <td style="text-align: center">
                   <?php echo $no_pass_qty; ?>
@@ -697,7 +693,7 @@ WHERE
                 </td>
               </tr>
 
-              <?php $no_pass_qty++;
+            <?php $no_pass_qty++;
               $totJml_pass_qty += $rowdb21_pass_qty['JML'];
               $totKg_pass_qty += $rowdb21_pass_qty['KG'];
               $totYard_pass_qty += $rowdb21_pass_qty['YARD'];
@@ -759,44 +755,44 @@ WHERE
             $c = 0;
 
             $sqlDB21_sample = " SELECT
-                      s.CREATIONUSER,
-                      s.TRANSACTIONDATE,
-                      s.DECOSUBCODE02,
-                      s.DECOSUBCODE03,
-                      s.DECOSUBCODE04,
-                      s.DECOSUBCODE05,
-                      s.DECOSUBCODE06,
-                      s.DECOSUBCODE07,
-                      s.DECOSUBCODE08,
-                      s.LOTCODE,
-                      SUM(s.BASEPRIMARYQUANTITY) AS KG,
-                      SUM(s.BASESECONDARYQUANTITY) AS YARD,
-                      s.ITEMELEMENTCODE,
-                      COUNT(s.ITEMELEMENTCODE) AS JML,
-                      a.VALUESTRING AS PTG,
-                      a1.VALUESTRING as NOTE,
-                      s.PROJECTCODE
-                    FROM STOCKTRANSACTION s
-                    LEFT OUTER JOIN ADSTORAGE a ON a.UNIQUEID = s.ABSUNIQUEID AND a.NAMENAME = 'StatusPotongS'
-                    LEFT OUTER JOIN ADSTORAGE a1 ON a1.UNIQUEID = s.ABSUNIQUEID AND a1.NAMENAME = 'NotePotongS'
-                    WHERE s.ITEMTYPECODE='KFF' AND s.LOGICALWAREHOUSECODE ='M031' AND a.VALUESTRING ='1'
-                      AND (s.TEMPLATECODE = '098' OR s.TEMPLATECODE = '342') 
-					  AND TIMESTAMP(TRIM(s.TRANSACTIONDATE),TRIM(s.TRANSACTIONTIME) ) BETWEEN '$tody' AND '$tomrw'
-                    GROUP BY
-                      s.TRANSACTIONDATE,
-                      s.DECOSUBCODE02,
-                      s.DECOSUBCODE03,
-                      s.DECOSUBCODE04,
-                      s.DECOSUBCODE05,
-                      s.DECOSUBCODE06,
-                      s.DECOSUBCODE07,
-                      s.DECOSUBCODE08,
-                      s.LOTCODE,
-                      s.CREATIONUSER,
-                      a.VALUESTRING,
-                      s.PROJECTCODE,
-                      a1.VALUESTRING,
-                      s.ITEMELEMENTCODE ";
+                                  s.CREATIONUSER,
+                                  s.TRANSACTIONDATE,
+                                  s.DECOSUBCODE02,
+                                  s.DECOSUBCODE03,
+                                  s.DECOSUBCODE04,
+                                  s.DECOSUBCODE05,
+                                  s.DECOSUBCODE06,
+                                  s.DECOSUBCODE07,
+                                  s.DECOSUBCODE08,
+                                  s.LOTCODE,
+                                  SUM(s.BASEPRIMARYQUANTITY) AS KG,
+                                  SUM(s.BASESECONDARYQUANTITY) AS YARD,
+                                  s.ITEMELEMENTCODE,
+                                  COUNT(s.ITEMELEMENTCODE) AS JML,
+                                  a.VALUESTRING AS PTG,
+                                  a1.VALUESTRING as NOTE,
+                                  s.PROJECTCODE
+                                FROM STOCKTRANSACTION s
+                                LEFT OUTER JOIN ADSTORAGE a ON a.UNIQUEID = s.ABSUNIQUEID AND a.NAMENAME = 'StatusPotongS'
+                                LEFT OUTER JOIN ADSTORAGE a1 ON a1.UNIQUEID = s.ABSUNIQUEID AND a1.NAMENAME = 'NotePotongS'
+                                WHERE s.ITEMTYPECODE='KFF' AND s.LOGICALWAREHOUSECODE ='M031' AND a.VALUESTRING ='1'
+                                  AND (s.TEMPLATECODE = '098' OR s.TEMPLATECODE = '342') 
+                                  AND TIMESTAMP(TRIM(s.TRANSACTIONDATE),TRIM(s.TRANSACTIONTIME) ) BETWEEN '$tody' AND '$tomrw'
+                                GROUP BY
+                                  s.TRANSACTIONDATE,
+                                  s.DECOSUBCODE02,
+                                  s.DECOSUBCODE03,
+                                  s.DECOSUBCODE04,
+                                  s.DECOSUBCODE05,
+                                  s.DECOSUBCODE06,
+                                  s.DECOSUBCODE07,
+                                  s.DECOSUBCODE08,
+                                  s.LOTCODE,
+                                  s.CREATIONUSER,
+                                  a.VALUESTRING,
+                                  s.PROJECTCODE,
+                                  a1.VALUESTRING,
+                                  s.ITEMELEMENTCODE ";
 
             $stmt1_sample = db2_exec($conn1, $sqlDB21_sample, array('cursor' => DB2_SCROLLABLE));
             //}
@@ -809,7 +805,7 @@ WHERE
                 trim($rowdb21_sample['DECOSUBCODE06']) . " " .
                 trim($rowdb21_sample['DECOSUBCODE07']) . " " .
                 trim($rowdb21_sample['DECOSUBCODE08']);
-              ?>
+            ?>
               <tr>
                 <td style="text-align: center">
                   <?php echo $no_sample; ?>
@@ -843,7 +839,7 @@ WHERE
                 </td>
               </tr>
 
-              <?php $no_sample++;
+            <?php $no_sample++;
               $totJml_sample += $rowdb21_sample['JML'];
               $totKg_sample += $rowdb21_sample['KG'];
               $totYard_sample += $rowdb21_sample['YARD'];
@@ -873,7 +869,7 @@ WHERE
       </div>
       <!-- /.card-body -->
     </div>
-	<div class="card card-danger">
+    <div class="card card-danger">
       <div class="card-header">
         <h3 class="card-title">Data Laporan Harian Stock Take</h3>
       </div>
@@ -899,40 +895,40 @@ WHERE
             $no_stocktake = 1;
             $c = 0;
             $sqlDB21_stocktake = "SELECT
-                        s.CREATIONUSER,
-                        s.TRANSACTIONDATE,
-                        s.ORDERCODE,
-                        s.DECOSUBCODE02,
-                        s.DECOSUBCODE03,
-                        s.DECOSUBCODE04,
-                        s.DECOSUBCODE05,
-                        s.DECOSUBCODE06,
-                        s.DECOSUBCODE07,
-                        s.DECOSUBCODE08,
-                        s.LOTCODE,
-                        SUM(s.BASEPRIMARYQUANTITY) AS KG,
-                        s.ITEMELEMENTCODE,
-                        COUNT(s.ITEMELEMENTCODE) AS JML,
-                        s.PROJECTCODE
-                      FROM STOCKTRANSACTION s
-                      WHERE s.ITEMTYPECODE='KFF'
-                      AND s.LOGICALWAREHOUSECODE ='M031'
-                      AND s.TEMPLATECODE = '098' 
-                      AND TIMESTAMP(TRIM(s.TRANSACTIONDATE),TRIM(s.TRANSACTIONTIME) ) BETWEEN '$tody' AND '$tomrw'
-                      GROUP BY
-                        s.TRANSACTIONDATE,
-                        s.ORDERCODE,
-                        s.DECOSUBCODE02,
-                        s.DECOSUBCODE03,
-                        s.DECOSUBCODE04,
-                        s.DECOSUBCODE05,
-                        s.DECOSUBCODE06,
-                        s.DECOSUBCODE07,
-                        s.DECOSUBCODE08,
-                        s.LOTCODE,
-                        s.CREATIONUSER,
-                        s.PROJECTCODE,
-                        s.ITEMELEMENTCODE ";
+                                    s.CREATIONUSER,
+                                    s.TRANSACTIONDATE,
+                                    s.ORDERCODE,
+                                    s.DECOSUBCODE02,
+                                    s.DECOSUBCODE03,
+                                    s.DECOSUBCODE04,
+                                    s.DECOSUBCODE05,
+                                    s.DECOSUBCODE06,
+                                    s.DECOSUBCODE07,
+                                    s.DECOSUBCODE08,
+                                    s.LOTCODE,
+                                    SUM(s.BASEPRIMARYQUANTITY) AS KG,
+                                    s.ITEMELEMENTCODE,
+                                    COUNT(s.ITEMELEMENTCODE) AS JML,
+                                    s.PROJECTCODE
+                                  FROM STOCKTRANSACTION s
+                                  WHERE s.ITEMTYPECODE='KFF'
+                                  AND s.LOGICALWAREHOUSECODE ='M031'
+                                  AND s.TEMPLATECODE = '098' 
+                                  AND TIMESTAMP(TRIM(s.TRANSACTIONDATE),TRIM(s.TRANSACTIONTIME) ) BETWEEN '$tody' AND '$tomrw'
+                                  GROUP BY
+                                    s.TRANSACTIONDATE,
+                                    s.ORDERCODE,
+                                    s.DECOSUBCODE02,
+                                    s.DECOSUBCODE03,
+                                    s.DECOSUBCODE04,
+                                    s.DECOSUBCODE05,
+                                    s.DECOSUBCODE06,
+                                    s.DECOSUBCODE07,
+                                    s.DECOSUBCODE08,
+                                    s.LOTCODE,
+                                    s.CREATIONUSER,
+                                    s.PROJECTCODE,
+                                    s.ITEMELEMENTCODE ";
             $stmt1_stocktake = db2_exec($conn1, $sqlDB21_stocktake, array('cursor' => DB2_SCROLLABLE));
             //}
             while ($rowdb21_stocktake = db2_fetch_assoc($stmt1_stocktake)) {
@@ -944,7 +940,7 @@ WHERE
                 trim($rowdb21_stocktake['DECOSUBCODE06']) . " " .
                 trim($rowdb21_stocktake['DECOSUBCODE07']) . " " .
                 trim($rowdb21_stocktake['DECOSUBCODE08']);
-              ?>
+            ?>
               <tr>
                 <td style="text-align: center">
                   <?php echo $no_stocktake; ?>
@@ -977,7 +973,7 @@ WHERE
                   <?php echo $rowdb21_stocktake['CREATIONUSER']; ?>
                 </td>
               </tr>
-              <?php $no_stocktake++;
+            <?php $no_stocktake++;
               $totJml_stocktake += $rowdb21_stocktake['JML'];
               $totKg_stocktake += $rowdb21_stocktake['KG'];
             } ?>
@@ -1004,14 +1000,14 @@ WHERE
       </div>
       <!-- /.card-body -->
     </div>
-	
+
     <!-- End of Card Potong Sample -->
 
   <?php } ?>
 </div><!-- /.container-fluid -->
 <!-- /.content -->
 <script>
-  $(function () {
+  $(function() {
     //Datepicker
     $('#datepicker').datetimepicker({
       format: 'YYYY-MM-DD'

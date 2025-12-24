@@ -101,26 +101,20 @@ if (isset($_POST['submit'])) {
             $lot       = str_replace("'", "''", $getData[7]);
             $idUp      = $_GET['id'];
 
-            mysqli_query($con, "INSERT INTO tbl_stokfull_bs 
+            sqlsrv_query(
+              $con,
+              "INSERT INTO tbl_stokfull_bs 
                 (tgl_buat, SN, KG, zone, lokasi, nowarna, warna, lot, id_upload) 
-                VALUES (
-                    '" . $tgl_buat . "', 
-                    '" . $SN . "', 
-                    '" . $KG . "', 
-                    '" . $zone . "', 
-                    '" . $lokasi . "', 
-                    '" . $nowarna . "', 
-                    '" . $warna . "', 
-                    '" . $lot ."', 
-                    '" . $idUp . "'
-                )"); 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              [$tgl_buat, $SN, $KG, $zone, $lokasi, $nowarna, $warna, $lot, $idUp]
+            ); 
         }
 
         // Update upload log
-        $sqlupdateUP = mysqli_query($con, "UPDATE tbl_upload_bs SET 
-            nama_file='$nameFile',
-            tgl_upload=now()
-            WHERE id='$idUp'");
+        $sqlupdateUP = sqlsrv_query($con, "UPDATE tbl_upload_bs SET 
+            nama_file=?,
+            tgl_upload=GETDATE()
+            WHERE id=?", [$nameFile, $idUp]);
 
         // Close opened CSV file
         fclose($csvFile);
