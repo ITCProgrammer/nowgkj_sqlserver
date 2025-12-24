@@ -78,15 +78,16 @@ function formatSqlsrvDate($value, $format = 'Y-m-d') {
                                 <td style="text-align: center"><?php echo $no; ?></td>
                                 <td style="text-align: center">
                                     <div class="btn-group">
-                                        <a href="DetailKainBB-<?php echo $tglTutup; ?>" class="btn btn-info btn-xs" target="_blank"><i class="fa fa-link"></i> Lihat Data</a>
-                                        <a href="pages/cetak/DetailKainBBExcel.php?tgl=<?php echo $tglTutup; ?>" class="btn btn-success btn-xs" target="_blank"><i class="fa fa-file"></i> Cetak Ke Excel</a>
+                                        <?php $tglParam = urlencode($tglTutup); ?>
+                                        <a href="DetailKainBB-<?php echo $tglParam; ?>" class="btn btn-info btn-xs" target="_blank"><i class="fa fa-link"></i> Lihat Data</a>
+                                        <a href="pages/cetak/DetailKainBBExcel.php?tgl=<?php echo $tglParam; ?>" class="btn btn-success btn-xs" target="_blank"><i class="fa fa-file"></i> Cetak Ke Excel</a>
                                     </div>
                                 </td>
                                 <td style="text-align: center"><?php echo $tglTutup; ?></td>
                                 <td style="text-align: center"><?php echo $r['rol']; ?></td>
                                 <td style="text-align: right"><?php echo number_format($r['kg'], 3); ?></td>
                                 <td style="text-align: center">
-                                    <a href="#" class="btn btn-xs btn-danger <?php if ($tglNow == $tglTutup) { } else { echo "disabled"; } ?>" onclick="confirm_delete('DelDetailKainBB-<?php echo $tglTutup; ?>');"><small class="fas fa-trash"> </small> Hapus</a>
+                                    <a href="#" class="btn btn-xs btn-danger <?php if ($tglNow == $tglTutup) { } else { echo "disabled"; } ?>" onclick="confirm_delete('DelDetailKainBB-<?php echo $tglParam; ?>');"><small class="fas fa-trash"> </small> Hapus</a>
                                 </td>
                             </tr>
                             <?php

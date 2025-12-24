@@ -9,9 +9,20 @@
 <?php
 	include "../../koneksi.php";
 	ini_set("error_reporting", 1);
-?>
-<?php
+    $schema = 'dbnow_gkj';
+    $tblOpnameDetailBB = "[$schema].[tbl_opname_detail_bb_11]";
 	$Tgl		= isset($_GET['tgl']) ? $_GET['tgl'] : '';
+
+    $sqlErrors = [];
+    function logSqlError($stmt, $label = ''){
+        global $sqlErrors;
+        if ($stmt !== false) { return; }
+        $err = sqlsrv_errors();
+        if (!empty($err)) {
+            $msg = ($label !== '' ? $label . ': ' : '') . $err[0]['message'];
+            $sqlErrors[] = $msg;
+        }
+    }
 ?>
 
           <table border="1">
@@ -41,8 +52,7 @@
 			  
    $no=1;   
    $c=0;
-   $sqlBB=mysqli_query($con,"
-   select
+   $sqlBB = "select
 	itm,
 	langganan,
 	buyer,
@@ -64,11 +74,12 @@
 	weight as kg,
 	length
 from
-	tbl_opname_detail_bb_11
+	$tblOpnameDetailBB
 where
-	tgl_tutup = '$Tgl'
-   ");
-	while($rBB=mysqli_fetch_array($sqlBB)){
+	tgl_tutup = ?";
+    $stmtBB = sqlsrv_query($con, $sqlBB, [$Tgl], ["Scrollable" => SQLSRV_CURSOR_KEYSET]);
+    logSqlError($stmtBB, 'DetailKainBBExcel');
+	while($stmtBB && ($rBB=sqlsrv_fetch_array($stmtBB, SQLSRV_FETCH_ASSOC))){
 ?>				  
 	  <tr>
       <td><?php echo $rBB['itm']; ?></td>
@@ -97,4 +108,11 @@ where
 	} 
 					  ?>				                    
                 </table>
-              
+<?php if (!empty($sqlErrors)) { ?>
+    <p><strong>SQL Error:</strong></p>
+    <ul>
+        <?php foreach ($sqlErrors as $errMsg) { ?>
+            <li><?php echo htmlspecialchars($errMsg); ?></li>
+        <?php } ?>
+    </ul>
+<?php } ?>
