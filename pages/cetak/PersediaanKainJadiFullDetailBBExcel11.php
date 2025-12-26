@@ -8,6 +8,25 @@
 <?php
 	include "../../koneksi.php";
 	ini_set("error_reporting", 1);
+    $schema = 'dbnow_gkj';
+    $tblOpnameDetail = "[$schema].[tbl_opname_detail_bb_11]";
+    $sqlErrors = [];
+    function logSqlError($stmt, $label = ''){
+        global $sqlErrors;
+        if ($stmt !== false) { return; }
+        $err = sqlsrv_errors();
+        if (!empty($err)) {
+            $msg = ($label !== '' ? $label . ': ' : '') . $err[0]['message'];
+            $sqlErrors[] = $msg;
+        }
+    }
+    function fmtDate($val, $format = 'Y-m-d') {
+        if ($val instanceof DateTime) {
+            return $val->format($format);
+        }
+        return $val;
+    }
+    $tgl = isset($_GET['tgl']) ? $_GET['tgl'] : '';
 ?>
 <table>
                   <tr>
@@ -41,27 +60,32 @@
                     <th>ElementsCode</th>
                     <th>Status</th>
                     </tr>
-				  <?php	
-   $no=1;   
+				  <?php
+   $no=1;
    $c=0;
 	$sqlDB21 = " select *
 from
-	tbl_opname_detail_bb_11 tod
-where tgl_tutup ='$_GET[tgl]' ";
-	$stmt1   = mysqli_query($con,$sqlDB21);
-    while($rowdb21 = mysqli_fetch_array($stmt1)){		
+	$tblOpnameDetail tod
+where tgl_tutup = ? ";
+	$stmt1   = sqlsrv_query($con,$sqlDB21, [$tgl], ["Scrollable" => SQLSRV_CURSOR_KEYSET]);
+    logSqlError($stmt1, 'FullDetailBB tgl');
+    while($stmt1 && ($rowdb21 = sqlsrv_fetch_array($stmt1, SQLSRV_FETCH_ASSOC))){
+        $tglMutasi   = fmtDate($rowdb21['tgl_mutasi']);
+        $tglUpdate   = fmtDate($rowdb21['tgl_update']);
+        $tglDelivery = fmtDate($rowdb21['tgl_delivery']);
+        $tglDeliveryActual = fmtDate($rowdb21['tgl_delivery_actual']);
 	?>
 	  <tr>
-	    <td><?php if($rowdb21['tgl_mutasi']!="0000-00-00"){echo $rowdb21['tgl_mutasi'];}else{} ?></td>
-	    <td><?php echo $rowdb21['tgl_update']; ?></td>
+	    <td><?php if($tglMutasi!="0000-00-00"){echo $tglMutasi;}else{} ?></td>
+	    <td><?php echo $tglUpdate; ?></td>
 	    <td><?php echo $rowdb21['itm']; ?></td>
 	    <td><?php echo $rowdb21['langganan']; ?></td>
 	    <td><?php echo $rowdb21['buyer']; ?></td>
 	    <td><?php echo $rowdb21['po']; ?></td>
 	    <td><?php echo $rowdb21['orderno']; ?></td>
 	    <td><?php echo $rowdb21['tipe']; ?></td>
-	    <td><?php echo $rowdb21['tgl_delivery']; ?></td>
-	    <td><?php echo $rowdb21['tgl_delivery_actual']; ?></td>
+	    <td><?php echo $tglDelivery; ?></td>
+	    <td><?php echo $tglDeliveryActual; ?></td>
 	    <td><?php echo $rowdb21['no_item']; ?></td>
 	    <td><?php echo $rowdb21['kategori']; ?></td>
 	    <td><?php echo $rowdb21['jns_kain']; ?></td>
@@ -125,3 +149,11 @@ where tgl_tutup ='$_GET[tgl]' ";
                     <td></td>  
                     </tr> 
                 </table>
+<?php if (!empty($sqlErrors)) { ?>
+    <p><strong>SQL Error:</strong></p>
+    <ul>
+        <?php foreach ($sqlErrors as $errMsg) { ?>
+            <li><?php echo htmlspecialchars($errMsg); ?></li>
+        <?php } ?>
+    </ul>
+<?php } ?>

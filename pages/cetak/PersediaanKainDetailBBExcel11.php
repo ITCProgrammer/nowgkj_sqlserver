@@ -9,8 +9,18 @@
 <?php
 	include "../../koneksi.php";
 	ini_set("error_reporting", 1);
-?>
-<?php
+    $schema = 'dbnow_gkj';
+    $tblOpnameDetailBB = "[$schema].[tbl_opname_detail_bb_11]";
+    $sqlErrors = [];
+    function logSqlError($stmt, $label = ''){
+        global $sqlErrors;
+        if ($stmt !== false) { return; }
+        $err = sqlsrv_errors();
+        if (!empty($err)) {
+            $msg = ($label !== '' ? $label . ': ' : '') . $err[0]['message'];
+            $sqlErrors[] = $msg;
+        }
+    }
 	$Tgl		= isset($_GET['tgl']) ? $_GET['tgl'] : '';
 ?>
 
@@ -37,9 +47,9 @@
 			  </tr>
 <?php				  
 			  
-   $no=1;   
+   $no=1;
    $c=0;
-   $sqlBB=mysqli_query($con,"
+   $sqlBB = "
    select
 	itm,
 	langganan,
@@ -60,14 +70,16 @@
 	sum(rol) as rol,
 	sum(weight) as kg
 from
-	tbl_opname_detail_bb_11
+	$tblOpnameDetailBB
 where
-	tgl_tutup = '$Tgl'
+	tgl_tutup = ?
 group by
 	lot,
-	sts_kain
-   ");
-	while($rBB=mysqli_fetch_array($sqlBB)){
+	sts_kain, itm, langganan, buyer, orderno, tipe, no_item, jns_kain, no_warna, warna, zone, lokasi, lebar, gramasi, sn
+   ";
+    $stmtBB = sqlsrv_query($con, $sqlBB, [$Tgl], ["Scrollable" => SQLSRV_CURSOR_KEYSET]);
+    logSqlError($stmtBB, 'DetailBBExcel list');
+	while($stmtBB && ($rBB=sqlsrv_fetch_array($stmtBB, SQLSRV_FETCH_ASSOC))){
 ?>				  
 	  <tr>
       <td><?php echo $rBB['itm']; ?></td>
@@ -94,4 +106,12 @@ group by
 	} 
 					  ?>				                    
                 </table>
+<?php if (!empty($sqlErrors)) { ?>
+    <p><strong>SQL Error:</strong></p>
+    <ul>
+        <?php foreach ($sqlErrors as $errMsg) { ?>
+            <li><?php echo htmlspecialchars($errMsg); ?></li>
+        <?php } ?>
+    </ul>
+<?php } ?>
               
