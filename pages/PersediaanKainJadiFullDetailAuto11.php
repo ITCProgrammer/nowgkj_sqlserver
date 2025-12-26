@@ -1,29 +1,54 @@
 <?php
 include "../koneksi.php";
 ini_set("error_reporting", 1);
+
+$schema           = 'dbnow_gkj';
+$tblOpnameDetail  = "[$schema].[tbl_opname_detail_11]";
+$sqlErrors        = [];
+
 define("TANGGAL_HARI_INI", date("Y-m-d"));
-$Awal = TANGGAL_HARI_INI;
-$cektgl = mysqli_query($con, "SELECT
-	DATE_FORMAT(NOW(), '%Y-%m-%d') as tgl,
+// $Awal = TANGGAL_HARI_INI;
+$Awal = '2025-12-25';
+
+function logSqlError($stmt, $label = '', $line = null) {
+    global $sqlErrors;
+    if ($stmt !== false) {
+        return;
+    }
+    $err = sqlsrv_errors();
+    if (!empty($err)) {
+        $msg = $label !== '' ? $label . ': ' : '';
+        if ($line !== null) {
+            $msg = "[line $line] " . $msg;
+        }
+        $msg .= $err[0]['message'];
+        $sqlErrors[] = $msg;
+        echo "<script>console.error('SQLSRV error: " . addslashes($msg) . "');</script>";
+    }
+}
+
+$cektglSql = "SELECT
+	CAST(GETDATE() AS date) as tgl,
 	COUNT(tgl_tutup) as ck ,
-	DATE_FORMAT(NOW(), '%H') as jam,
-	DATE_FORMAT(NOW(), '%H:%i') as jam1,
+	DATEPART(HOUR, GETDATE()) as jam,
+	FORMAT(GETDATE(), 'HH:mm') as jam1,
 	tgl_tutup 
 FROM
-	tbl_opname_detail_11
+	$tblOpnameDetail
 WHERE
-	tgl_tutup = '$Awal'
-LIMIT 1");
-$dcek = mysqli_fetch_array($cektgl);
-if ($dcek['ck'] > 0) {
+	tgl_tutup = ?";
+$stmtCek = sqlsrv_query($con, $cektglSql, [$Awal], ["Scrollable" => SQLSRV_CURSOR_KEYSET]);
+logSqlError($stmtCek, 'cek tgl tutup', __LINE__);
+$dcek = $stmtCek ? sqlsrv_fetch_array($stmtCek, SQLSRV_FETCH_ASSOC) : null;
+if ($dcek && $dcek['ck'] > 0) {
 	echo "<script>";
 	echo "alert('Stok Tgl " . $dcek['tgl_tutup'] . " Ini Sudah Pernah ditutup')";
 	echo "</script>";
-} else if ($dcek['jam'] < 2 ) {
+} else if ($dcek && $dcek['jam'] < 2 ) {
 		echo "<script>";
 		echo "alert('Tidak Bisa Tutup Sebelum jam 11 Malam Sampai jam 12 Malam, Sekarang Masih Jam ".$dcek['jam1']."')";
 		echo "</script>";	
-} else if ($_GET['note'] != "" or $_GET['note'] == "Berhasil") {
+} else if (isset($_GET['note']) && $_GET['note'] != "" or (isset($_GET['note']) && $_GET['note'] == "Berhasil")) {
 	echo "Tutup Transaksi Berhasil";
 } else {
 	$sqlDB21 = "SELECT 
@@ -138,7 +163,9 @@ if ($dcek['ck'] > 0) {
 					SUBSTR(b.LASTUPDATEDATETIME, 1, 10),
 					SUBSTR(b.CREATIONDATETIME, 1, 10),
 					u.LONGDESCRIPTION ";
-	$stmt1   = db2_exec($conn1, $sqlDB21, array('cursor' => DB2_SCROLLABLE));
+	$stmt1 = db2_prepare($conn1, $sqlDB21);
+    db2_execute($stmt1);
+    $insertOk = false;
 	while ($rowdb21 = db2_fetch_assoc($stmt1)) {
 		$itemNo = trim($rowdb21['DECOSUBCODE02']) . "" . trim($rowdb21['DECOSUBCODE03']);
 		if ($rowdb21['ITEMTYPECODE'] == "KFF") {
@@ -152,18 +179,11 @@ if ($dcek['ck'] > 0) {
 		FROM DB2ADMIN.SALESORDER SALESORDER LEFT OUTER JOIN DB2ADMIN.ITXVIEWAKJ 
        	ITXVIEWAKJ ON SALESORDER.CODE=ITXVIEWAKJ.CODE
 		WHERE SALESORDER.CODE='$rowdb21[PROJECTCODE]' ";
-		$stmt2   = db2_exec($conn1, $sqlDB22, array('cursor' => DB2_SCROLLABLE));
+		$stmt2 = db2_prepare($conn1, $sqlDB22);
+        db2_execute($stmt2);
 		$rowdb22 = db2_fetch_assoc($stmt2);
-		if ($rowdb22['LEGALNAME1'] == "") {
-			$langganan = "";
-		} else {
-			$langganan = $rowdb22['LEGALNAME1'];
-		}
-		if ($rowdb22['ORDERPARTNERBRANDCODE'] == "") {
-			$buyer = "";
-		} else {
-			$buyer = $rowdb22['LONGDESCRIPTION'];
-		}
+		$langganan = ($rowdb22['LEGALNAME1'] == "") ? "" : $rowdb22['LEGALNAME1'];
+		$buyer     = ($rowdb22['ORDERPARTNERBRANDCODE'] == "") ? "" : $rowdb22['LONGDESCRIPTION'];
 
 		$sqlDB23 = " SELECT i.WARNA FROM PRODUCT p
 					LEFT OUTER JOIN ITXVIEWCOLOR i ON
@@ -186,7 +206,8 @@ if ($dcek['ck'] > 0) {
 					i.SUBCODE06='$rowdb21[DECOSUBCODE06]' AND
 					i.SUBCODE07='$rowdb21[DECOSUBCODE07]' AND
 					i.SUBCODE08='$rowdb21[DECOSUBCODE08]' ";
-		$stmt3   = db2_exec($conn1, $sqlDB23, array('cursor' => DB2_SCROLLABLE));
+		$stmt3 = db2_prepare($conn1, $sqlDB23);
+        db2_execute($stmt3);
 		$rowdb23 = db2_fetch_assoc($stmt3);
 
 		$sqlDB25 = " SELECT ORDERITEMORDERPARTNERLINK.ORDPRNCUSTOMERSUPPLIERCODE,
@@ -202,7 +223,8 @@ if ($dcek['ck'] > 0) {
 					ORDERITEMORDERPARTNERLINK.SUBCODE06='$rowdb21[DECOSUBCODE06]' AND
 					ORDERITEMORDERPARTNERLINK.SUBCODE07='$rowdb21[DECOSUBCODE07]' AND
 					ORDERITEMORDERPARTNERLINK.SUBCODE08='$rowdb21[DECOSUBCODE08]'";
-		$stmt5   = db2_exec($conn1, $sqlDB25, array('cursor' => DB2_SCROLLABLE));
+		$stmt5 = db2_prepare($conn1, $sqlDB25);
+        db2_execute($stmt5);
 		$rowdb25 = db2_fetch_assoc($stmt5);
 		if ($rowdb25['LONGDESCRIPTION'] != "") {
 			$item = $rowdb25['LONGDESCRIPTION'];
@@ -220,8 +242,9 @@ if ($dcek['ck'] > 0) {
 						SALESORDERLINE.SUBCODE05='$rowdb21[DECOSUBCODE05]' AND
 						SALESORDERLINE.SUBCODE06='$rowdb21[DECOSUBCODE06]' AND
 						SALESORDERLINE.SUBCODE07='$rowdb21[DECOSUBCODE07]' AND
-						SALESORDERLINE.SUBCODE08='$rowdb21[DECOSUBCODE08]' LIMIT 1";
-		$stmt6   = db2_exec($conn1, $sqlDB26, array('cursor' => DB2_SCROLLABLE));
+						SALESORDERLINE.SUBCODE08='$rowdb21[DECOSUBCODE08]' FETCH FIRST 1 ROW ONLY";
+		$stmt6 = db2_prepare($conn1, $sqlDB26);
+        db2_execute($stmt6);
 		$rowdb26 = db2_fetch_assoc($stmt6);
 		if ($rowdb22['EXTERNALREFERENCE'] != "") {
 			$PO = $rowdb22['EXTERNALREFERENCE'];
@@ -246,7 +269,8 @@ if ($dcek['ck'] > 0) {
 							PRODUCT.SUBCODE06='$rowdb21[DECOSUBCODE06]' AND
 							PRODUCT.SUBCODE07='$rowdb21[DECOSUBCODE07]' AND
 							PRODUCT.SUBCODE08='$rowdb21[DECOSUBCODE08]'  ";
-		$stmt7   = db2_exec($conn1, $sqlDB27, array('cursor' => DB2_SCROLLABLE));
+		$stmt7 = db2_prepare($conn1, $sqlDB27);
+        db2_execute($stmt7);
 		$rowdb27 = db2_fetch_assoc($stmt7);
 		$sqlDB28 = " SELECT
 							QUALITYDOCLINE.VALUEGROUPCODE  AS GROUPING1 ,HUE.VALUEGROUPCODE AS HUE1
@@ -268,10 +292,11 @@ if ($dcek['ck'] > 0) {
 								QUALITYDOCLINE.CHARACTERISTICCODE = 'GROUPING' AND
 								QUALITYDOCUMENTITEMTYPEAFICODE ='KFF' AND
 								QUALITYDOCLINE.QUALITYDOCPRODUCTIONORDERCODE='" . $rowdb21['LOTCODE'] . "' ";
-		$stmt8   = db2_exec($conn1, $sqlDB28, array('cursor' => DB2_SCROLLABLE));
+		$stmt8 = db2_prepare($conn1, $sqlDB28);
+        db2_execute($stmt8);
 		$rowdb28 = db2_fetch_assoc($stmt8);
 
-		$q_deliverydate	= db2_exec($conn1, " SELECT
+		$q_deliverydate	= " SELECT
 											SUBSTR(LISTAGG(DELIVERYDATE, ', ') WITHIN GROUP (ORDER BY DELIVERYDATE), LENGTH(LISTAGG(DELIVERYDATE, ', ') WITHIN GROUP (ORDER BY DELIVERYDATE)) - 9) AS DELIVERYDATE,
 											SUBSTR(LISTAGG(CONFIRMEDDELIVERYDATE, ', ') WITHIN GROUP (ORDER BY CONFIRMEDDELIVERYDATE), LENGTH(LISTAGG(CONFIRMEDDELIVERYDATE, ', ') WITHIN GROUP (ORDER BY CONFIRMEDDELIVERYDATE)) - 9) AS CONFIRMEDDELIVERYDATE
 										FROM
@@ -293,8 +318,10 @@ if ($dcek['ck'] > 0) {
 													AND SUBCODE06 = '$rowdb21[DECOSUBCODE06]'
 													AND SUBCODE07 = '$rowdb21[DECOSUBCODE07]'
 													AND SUBCODE08 = '$rowdb21[DECOSUBCODE08]'
-													)");
-		$row_deliverydate	= db2_fetch_assoc($q_deliverydate);
+													)";
+		$stmt9 = db2_prepare($conn1, $q_deliverydate);
+		db2_execute($stmt9);
+		$row_deliverydate	= db2_fetch_assoc($stmt9);
 		if ($row_deliverydate['CONFIRMEDDELIVERYDATE'] == "") {
 			$delivery_actual = $rowdb22['CONFIRMEDDUEDATE'];
 		} else {
@@ -320,77 +347,68 @@ if ($dcek['ck'] > 0) {
 			$tglupd = $rowdb21['TGLCREATE'];
 		}
 
-
-		$simpan = mysqli_query($con, "INSERT INTO `tbl_opname_detail_11` SET 
-										itm	= '" . $item . "',
-										langganan	= '" . str_replace("'", "''", $langganan) . "',
-										buyer = '" . str_replace("'", "''", $buyer) . "',
-										po = '" . str_replace("'", "''", $PO) . "',
-										orderno = '" . $rowdb21['PROJECTCODE'] . "',
-										tipe = '" . $jns . "',
-										no_item = '" . $itemNo . "',
-										jns_kain = '" . str_replace("'", "''", $rowdb21['JNSKAIN']) . "',
-										no_warna = '" . $rowdb21['DECOSUBCODE05'] . "',
-										warna = '" . str_replace("'", "''", $rowdb23['WARNA']) . "',
-										rol = '" . $rowdb21['ROLL'] . "',
-										lot = '" . $rowdb21['LOTCODE'] . "',
-										weight = '" . round($rowdb21['BERAT'], 2) . "',
-										satuan = '" . $rowdb21['BASEPRIMARYUNITCODE'] . "',
-										length = '" . round($rowdb21['YD'], 2) . "',
-										satuan_len = '" . $rowdb21['BASESECONDARYUNITCODE'] . "',
-										zone = '" . $rowdb21['WHSLOCATIONWAREHOUSEZONECODE'] . "',
-										lokasi = '" . $rowdb21['WAREHOUSELOCATIONCODE'] . "',
-										lebar = '" . round($rowdb27['LEBAR']) . "',
-										gramasi = '" . round($rowdb27['GSM']) . "',
-										sts_kain = '" . $sts1 . "',
-										grouping1 = '" . $rowdb28['GROUPING1'] . "',
-										hue1 = '" . $rowdb28['HUE1'] . "',
-										sn = '" . $rowdb21['ELEMENTSCODE'] . "',
-										tgl_delivery = '" . $row_deliverydate['DELIVERYDATE'] . "',
-										tgl_delivery_actual = '" . $delivery_actual . "',
-										tgl_update = '" . $tglupd . "',
-										tgl_mutasi = '" . $rowdb21['TRANSACTIONDATE'] . "',
-										tgl_tutup = '$Awal',
-										tgl_buat = now(),
-										kategori = '" . $rowdb21['KATEGORI'] . "'") or die("GAGAL SIMPAN");
+        $insertSql = "INSERT INTO $tblOpnameDetail (
+            itm, langganan, buyer, po, orderno, tipe, no_item, jns_kain, no_warna, warna, rol, lot, weight, satuan, length, satuan_len, zone, lokasi, lebar, gramasi, sts_kain, grouping1, hue1, sn, tgl_delivery, tgl_delivery_actual, tgl_update, tgl_mutasi, tgl_tutup, tgl_buat, kategori
+        ) VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?
+        )";
+        $params = [
+            $item,
+            str_replace("'", "''", $langganan),
+            str_replace("'", "''", $buyer),
+            str_replace("'", "''", $PO),
+            $rowdb21['PROJECTCODE'],
+            $jns,
+            $itemNo,
+            str_replace("'", "''", $rowdb21['JNSKAIN']),
+            $rowdb21['DECOSUBCODE05'],
+            str_replace("'", "''", $rowdb23['WARNA']),
+            $rowdb21['ROLL'],
+            $rowdb21['LOTCODE'],
+            round($rowdb21['BERAT'], 2),
+            $rowdb21['BASEPRIMARYUNITCODE'],
+            round($rowdb21['YD'], 2),
+            $rowdb21['BASESECONDARYUNITCODE'],
+            $rowdb21['WHSLOCATIONWAREHOUSEZONECODE'],
+            $rowdb21['WAREHOUSELOCATIONCODE'],
+            round($rowdb27['LEBAR']),
+            round($rowdb27['GSM']),
+            $sts1,
+            $rowdb28['GROUPING1'],
+            $rowdb28['HUE1'],
+            $rowdb21['ELEMENTSCODE'],
+            $row_deliverydate['DELIVERYDATE'],
+            $delivery_actual,
+            $tglupd,
+            $rowdb21['TRANSACTIONDATE'],
+            $Awal,
+            $rowdb21['KATEGORI']
+        ];
+        $simpan = sqlsrv_query($con, $insertSql, $params);
+        logSqlError($simpan, 'insert opname detail', __LINE__);
+        if ($simpan !== false) {
+            $insertOk = true;
+        }
 	}
-	if ($simpan) {
-		//echo "<meta http-equiv='refresh' content='30; url=PersediaanKainJadiFullDetailAuto11.php?note=Berhasil'>";
+	if ($insertOk) {
 ?>
 		<script type="text/javascript">
-			// Mengarahkan ke URL pertama
 			window.open("cetak/PersediaanKainJadi2022DetailExcelR11.php?tgl=<?php echo $Awal; ?>", "_blank");
-
-
-			// Menunggu beberapa waktu sebelum mengarahkan ke URL kedua
-			setTimeout(function() {
+            setTimeout(function() {
 				window.open("cetak/PersediaanKainJadiNoOrderDetailExcelR11.php?tgl=<?php echo $Awal; ?>", "_blank");
 			}, 5000);
-			// Menunggu 5 detik (5000 milidetik) sebelum mengarahkan ke URL kedua
-
-			// Menunggu beberapa waktu sebelum mengarahkan ke URL ketiga
 			setTimeout(function() {
 				window.open("cetak/PersediaanKainJadiFullDetailExcelR11.php?tgl=<?php echo $Awal; ?>", "_blank");
 			}, 10000);
-			// Menunggu 10 detik (10000 milidetik) sebelum mengarahkan ke URL ketiga
-
-			// Menunggu beberapa waktu sebelum mengarahkan ke URL keempat
 			setTimeout(function() {
 				window.open("cetak/PersediaanKainJadi2023DetailExcelR11.php?tgl=<?php echo $Awal; ?>", "_blank");
 			}, 15000);
-			// Menunggu 15 detik (15000 milidetik) sebelum mengarahkan ke URL keempat
-
-			// Menunggu beberapa waktu sebelum mengarahkan ke URL kelima
 			setTimeout(function() {
 				window.open("cetak/PersediaanKainJadi2024DetailExcelR11.php?tgl=<?php echo $Awal; ?>", "_blank");
 			}, 20000);
-			// Menunggu 20 detik (20000 milidetik) sebelum mengarahkan ke URL kelima
-			
-			// Menunggu beberapa waktu sebelum mengarahkan ke URL kelima
 			setTimeout(function() {
 				window.open("cetak/PersediaanKainJadi2025DetailExcelR11.php?tgl=<?php echo $Awal; ?>", "_blank");
 			}, 25000);
-			// Menunggu 25 detik (20000 milidetik) sebelum mengarahkan ke URL kelima
 		</script>
 <?php
 	}
