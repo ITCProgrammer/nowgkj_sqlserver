@@ -1,25 +1,35 @@
 <?php
 include"../koneksi.php";
 ini_set("error_reporting", 1);
+set_time_limit(0);
+ini_set('max_execution_time', 0);
+
 define("TANGGAL_HARI_INI", date("Y-m-d"));
 $Awal = TANGGAL_HARI_INI;
-$cektgl=mysqli_query($con,"SELECT
-	DATE_FORMAT(NOW(), '%Y-%m-%d') as tgl,
-	COUNT(tgl_tutup) as ck ,
-	DATE_FORMAT(NOW(), '%H') as jam,
-	DATE_FORMAT(NOW(), '%H:%i') as jam1,
-	tgl_tutup 
-FROM
-	tbl_opname_detail_bb_11
-WHERE
-	tgl_tutup = '$Awal'
-LIMIT 1");
-$dcek=mysqli_fetch_array($cektgl);
-if($dcek['ck']>0){
+$tsql = "
+    SELECT
+        COUNT(*) AS ck,
+        CONVERT(varchar(10), MAX(tgl_tutup), 23) AS tgl_tutup
+    FROM dbnow_gkj.tbl_opname_detail_bb_11
+    WHERE CAST(tgl_tutup AS date) = CAST(? AS date)
+";
+
+$stmt = sqlsrv_query($con, $tsql, [$Awal]);
+if ($stmt === false) {
+	die(print_r(sqlsrv_errors(), true));
+}
+
+$dcek = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
+$ck = (int) ($dcek['ck'] ?? 0);
+$tglTutup = $dcek['tgl_tutup'] ?? $Awal;
+
+$note = $_GET['note'] ?? '';
+
+if ($ck > 0) {
 	echo "<script>";
-	echo "alert('Stok Tgl ".$dcek['tgl_tutup']." Ini Sudah Pernah ditutup')";
+	echo "alert('Stok Tgl {$tglTutup} Ini Sudah Pernah ditutup');";
 	echo "</script>";
-}else if($_GET['note']!="" or $_GET['note']=="Berhasil"){
+} elseif ($note === "Berhasil") {
 	echo "Tutup Transaksi Berhasil";
 }else{
 	$sqlDB21 = " 
@@ -61,6 +71,7 @@ WHERE
 		)	
 	";
 	$stmt1   = db2_exec($conn1,$sqlDB21, array('cursor'=>DB2_SCROLLABLE));
+	
     while($rowdb21 = db2_fetch_assoc($stmt1)){
 	$itemNo=trim($rowdb21['DECOSUBCODE02'])."".trim($rowdb21['DECOSUBCODE03']);	
 	$sqlDB22 = " SELECT SALESORDER.CODE, SALESORDER.EXTERNALREFERENCE, SALESORDER.ORDPRNCUSTOMERSUPPLIERCODE,
@@ -303,6 +314,7 @@ FROM
 	$rowdb31 = db2_fetch_assoc($stmt11);
 		
 	if($rowdb21['ITEMTYPECODE']=="KFF"){$jns="KAIN";}else if($rowdb21['ITEMTYPECODE']=="FKF"){$jns="KRAH";}	
+	//tinggal ini aja yang belum sql server
 	$sqlQC=mysqli_query($cond,"SELECT k.pelanggan,k.no_po,k.no_order,k.jenis_kain  FROM db_qc.tmp_detail_kite tmp
 inner join db_qc.tbl_kite k on k.id=tmp.id_kite 
 WHERE SN='$rowdb21[ELEMENTSCODE]' ");
@@ -345,33 +357,49 @@ WHERE SN='$rowdb21[ELEMENTSCODE]' ");
    $pjng=number_format(round($rowdb21['BASESECONDARYQUANTITYUNIT'],2),2);
 	
 		
-	$simpan=mysqli_query($con,"INSERT INTO `tbl_opname_detail_bb_11` SET 
-	itm	= '".$item."',
-	langganan	= '".str_replace("'","''",$langganan1)."',
-	buyer = '".str_replace("'","''",$buyer1)."',
-	po = '".str_replace("'","''",$PO1)."',
-	orderno = '".$project."',
-	tipe = '".$jns."',
-	no_item = '".$itemNo."',
-	jns_kain = '".str_replace("'","''",$jeniskain)."',
-	no_warna = '".$rowdb21['DECOSUBCODE05']."',
-	warna = '".str_replace("'","''",$warna)."',
-	rol = '1',
-	lot = '".$rowdb21['LOTCODE']."',
-	weight = '".round($berat,2)."',
-	satuan = '".$rowdb21['BASEPRIMARYUNITCODE']."',
-	length = '".round($pjng,2)."',
-	satuan_len = '".$rowdb21['BASESECONDARYUNITCODE']."',
-	zone = '".$rowdb21['WHSLOCATIONWAREHOUSEZONECODE']."',
-	lokasi = '".$rowdb21['WAREHOUSELOCATIONCODE']."',
-	lebar = '".round($rowdb27['VALUEDECIMAL'])."',
-	gramasi = '".round($rowdb28['VALUEDECIMAL'])."',	
-	sts_kain = '".$sts."',
-	sn = '".$rowdb21['ELEMENTSCODE']."',
-	tgl_update = '".$rowdb24['TRANSACTIONDATE']." ".$rowdb24['TRANSACTIONTIME']."',	
-	tgl_tutup = '$Awal',
-	tgl_buat = now()") or die("GAGAL SIMPAN");	
-	
+	$tsql = "INSERT INTO dbnow_gkj.tbl_opname_detail_bb_11 (
+			itm, langganan, buyer, po, orderno, tipe, no_item, jns_kain, no_warna, warna,
+			rol, lot, [weight], satuan, [length], satuan_len, zone, lokasi, lebar, gramasi,
+			sts_kain, sn, tgl_update, tgl_tutup, tgl_buat
+		) VALUES (
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+			?, ?, ?, ?, GETDATE()
+		)";
+
+		$tglUpdate = trim(($rowdb24['TRANSACTIONDATE'] ?? '') . ' ' . ($rowdb24['TRANSACTIONTIME'] ?? ''));
+
+		$params = [
+			$item,
+			$langganan1,
+			$buyer1,
+			$PO1,
+			$project,
+			$jns,
+			$itemNo,
+			$jeniskain,
+			$rowdb21['DECOSUBCODE05'],
+			$warna,
+			1,
+			$rowdb21['LOTCODE'],
+			round((float)$berat, 2),
+			$rowdb21['BASEPRIMARYUNITCODE'],
+			round((float)$pjng, 2),
+			$rowdb21['BASESECONDARYUNITCODE'],
+			$rowdb21['WHSLOCATIONWAREHOUSEZONECODE'],
+			$rowdb21['WAREHOUSELOCATIONCODE'],
+			round((float)$rowdb27['VALUEDECIMAL'], 0),
+			round((float)$rowdb28['VALUEDECIMAL'], 0),
+			$sts,
+			$rowdb21['ELEMENTSCODE'],
+			$tglUpdate,
+			$Awal
+		];
+
+		$stmt = sqlsrv_query($con, $tsql, $params);
+		if ($stmt === false) {
+			die("GAGAL SIMPAN: " . print_r(sqlsrv_errors(), true));
+		}
 	}
 	if($simpan){		
         //echo "<meta http-equiv='refresh' content='30; url=PersediaanKainDetailBBZoneAuto11.php?note=Berhasil'>";
