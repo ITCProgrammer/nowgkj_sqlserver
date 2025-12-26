@@ -21,26 +21,47 @@ $Awal	= isset($_POST['tgl_awal']) ? $_POST['tgl_awal'] : '';
                     </tr>
                   </thead>
                   <tbody>
-<?php	 
-$no=1;   
-$c=0;				  
-$sql = mysqli_query($con," SELECT tgl_tutup,sum(rol) as rol,sum(weight) as kg,DATE_FORMAT(now(),'%Y-%m-%d') as tgl 
-FROM tbl_opname_detail_11 GROUP BY tgl_tutup ORDER BY tgl_tutup DESC LIMIT 60");		  
-    while($r = mysqli_fetch_array($sql)){
-		
-?>
-	  <tr>
-	  <td style="text-align: center"><?php echo $no;?></td>
-	  <td style="text-align: center"><div class="btn-group"><a href="DetailOpnamed11-<?php echo $r['tgl_tutup'];?>" class="btn btn-info btn-xs" target="_blank"> <i class="fa fa-link"></i> Lihat Data</a><a href="pages/cetak/DetailOpnamed11Excel.php?tgl=<?php echo $r['tgl_tutup'];?>" class="btn btn-success btn-xs" target="_blank"> <i class="fa fa-file"></i> Cetak Ke Excel</a></div></td>
-	  <td style="text-align: center"><?php echo $r['tgl_tutup'];?></td>
-      <td style="text-align: center"><?php echo $r['rol'];?></td>
-      <td style="text-align: right"><?php echo number_format($r['kg'],3);?></td>
-      </tr>
-	  				  
-	<?php 
-	 $no++; 
-	
-	} ?>
+                      <?php
+                      $no = 1;
+
+                      $sql = "SELECT TOP (60)
+                              CONVERT(date, tgl_tutup) AS tgl_tutup,
+                              SUM(rol) AS rol,
+                              SUM([weight]) AS kg,
+                              CONVERT(date, GETDATE()) AS tgl
+                          FROM dbnow_gkj.tbl_opname_detail_11
+                          GROUP BY CONVERT(date, tgl_tutup)
+                          ORDER BY tgl_tutup DESC
+                      ";
+
+                      $stmt = sqlsrv_query($con, $sql);
+                      if ($stmt === false) {
+                          die(print_r(sqlsrv_errors(), true));
+                      }
+
+                      while ($r = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+                          $tgl_tutup = ($r['tgl_tutup'] instanceof DateTime) ? $r['tgl_tutup']->format('Y-m-d') : (string)$r['tgl_tutup'];
+                      ?>
+                        <tr>
+                          <td style="text-align: center"><?php echo $no; ?></td>
+                          <td style="text-align: center">
+                            <div class="btn-group">
+                              <a href="DetailOpnamed11-<?php echo $tgl_tutup; ?>" class="btn btn-info btn-xs" target="_blank">
+                                <i class="fa fa-link"></i> Lihat Data
+                              </a>
+                              <a href="pages/cetak/DetailOpnamed11Excel.php?tgl=<?php echo $tgl_tutup; ?>" class="btn btn-success btn-xs" target="_blank">
+                                <i class="fa fa-file"></i> Cetak Ke Excel
+                              </a>
+                            </div>
+                          </td>
+                          <td style="text-align: center"><?php echo $tgl_tutup; ?></td>
+                          <td style="text-align: center"><?php echo (int)$r['rol']; ?></td>
+                          <td style="text-align: right"><?php echo number_format((float)$r['kg'], 3, '.', ','); ?></td>
+                        </tr>
+                      <?php
+                          $no++;
+                      }
+                      ?>
 				  </tbody>
                   <tfoot>				
 					</tfoot>
