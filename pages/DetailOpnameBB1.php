@@ -33,77 +33,82 @@
                   </tr>
                   </thead>
                   <tbody>
-				  <?php				  
-   $no=1;   
-   $c=0;
-   $sql = mysqli_query($con," 
-   select
-	itm,
-	langganan,
-	buyer,
-	po,
-	orderno,
-	tipe,
-	no_item,
-	jns_kain,
-	no_warna,
-	warna,
-	lot,
-	count(rol) as rol,
-	sum(weight) as weight,
-	satuan,
-	sum(length) as length,
-	satuan_len,
-	zone,
-	lokasi,
-	lebar,
-	gramasi,
-	sts_kain
-from
-	tbl_opname_detail_bb_11
-where
-	tgl_tutup = '$_GET[tgl]'
-group by
-	orderno,
-	no_warna,
-	lot,
-	zone,
-	lokasi,
-	sts_kain
-order by
-	id asc
-   ");		  
-    while($r = mysqli_fetch_array($sql)){
-		
+<?php
+$no = 1;
+$totrol = 0;
+$totkg  = 0.0;
+
+$tgl = $_GET['tgl'] ?? '';
+
+$sql = "
+    SELECT
+        itm,
+        langganan,
+        buyer,
+        po,
+        orderno,
+        tipe,
+        no_item,
+        jns_kain,
+        no_warna,
+        warna,
+        lot,
+        COUNT(rol) AS rol,
+        SUM([weight]) AS [weight],
+        satuan,
+        SUM([length]) AS [length],
+        satuan_len,
+        zone,
+        lokasi,
+        lebar,
+        gramasi,
+        sts_kain
+    FROM dbnow_gkj.tbl_opname_detail_bb_11
+    WHERE CONVERT(date, tgl_tutup) = CONVERT(date, ?)
+    GROUP BY
+        itm, langganan, buyer, po, orderno, tipe, no_item, jns_kain,
+        no_warna, warna, lot, satuan, satuan_len, zone, lokasi, lebar, gramasi, sts_kain
+    ORDER BY
+        MIN(id) ASC
+";
+
+$stmt = sqlsrv_query($con, $sql, [$tgl]);
+if ($stmt === false) {
+    die(print_r(sqlsrv_errors(), true));
+}
+
+while ($r = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+    $totrol += (int)$r['rol'];
+    $totkg  += (float)$r['weight'];
 ?>
-	  <tr>
-	    <td style="text-align: left"><?php echo $r['itm']; ?></td>
-	    <td style="text-align: left"><?php echo $r['langganan']; ?></td>
-      <td style="text-align: left"><?php echo $r['buyer']; ?></td>
-      <td style="text-align: center"><?php echo $r['po']; ?></td>
-      <td style="text-align: center"><?php echo $r['orderno']; ?></td>
-      <td style="text-align: center"><?php echo $r['tipe']; ?></td>
-      <td style="text-align: center"><?php echo $r['no_item']; ?></td>
-      <td style="text-align: center"><?php echo $r['jns_kain']; ?></td>
-      <td style="text-align: center"><?php echo $r['no_warna']; ?></td>
-      <td style="text-align: center"><?php echo $r['warna']; ?></td>
-      <td style="text-align: center"><?php echo $r['lot'];?></td>
-      <td style="text-align: center"><?php echo $r['rol'];?></td>
-      <td style="text-align: right"><?php echo $r['weight'];?></td>
-      <td style="text-align: center"><?php echo $r['satuan'];?></td>
-      <td style="text-align: center"><?php echo $r['length'];?></td>
-      <td style="text-align: center"><?php echo $r['satuan_len'];?></td>
-      <td style="text-align: center"><?php echo $r['zone'];?></td>
-      <td style="text-align: center"><?php echo $r['lokasi'];?></td>
-      <td style="text-align: center"><?php echo $r['lebar'];?></td>
-      <td style="text-align: center"><?php echo $r['gramasi'];?></td>
-      <td style="text-align: center"><?php echo $r['sts_kain'];?></td>
-      </tr>				  
-<?php	$no++;
-		$totrol=$totrol+$r['rol'];
-		$totkg=$totkg+$r['weight'];
-	} ?>
-				  </tbody>
+  <tr>
+    <td style="text-align: left"><?php echo $r['itm']; ?></td>
+    <td style="text-align: left"><?php echo $r['langganan']; ?></td>
+    <td style="text-align: left"><?php echo $r['buyer']; ?></td>
+    <td style="text-align: center"><?php echo $r['po']; ?></td>
+    <td style="text-align: center"><?php echo $r['orderno']; ?></td>
+    <td style="text-align: center"><?php echo $r['tipe']; ?></td>
+    <td style="text-align: center"><?php echo $r['no_item']; ?></td>
+    <td style="text-align: center"><?php echo $r['jns_kain']; ?></td>
+    <td style="text-align: center"><?php echo $r['no_warna']; ?></td>
+    <td style="text-align: center"><?php echo $r['warna']; ?></td>
+    <td style="text-align: center"><?php echo $r['lot']; ?></td>
+    <td style="text-align: center"><?php echo (int)$r['rol']; ?></td>
+    <td style="text-align: right"><?php echo number_format((float)$r['weight'], 5, '.', ','); ?></td>
+    <td style="text-align: center"><?php echo $r['satuan']; ?></td>
+    <td style="text-align: center"><?php echo number_format((float)$r['length'], 5, '.', ','); ?></td>
+    <td style="text-align: center"><?php echo $r['satuan_len']; ?></td>
+    <td style="text-align: center"><?php echo $r['zone']; ?></td>
+    <td style="text-align: center"><?php echo $r['lokasi']; ?></td>
+    <td style="text-align: center"><?php echo $r['lebar']; ?></td>
+    <td style="text-align: center"><?php echo $r['gramasi']; ?></td>
+    <td style="text-align: center"><?php echo $r['sts_kain']; ?></td>
+  </tr>
+<?php
+  $no++;
+}
+?>
+</tbody>
 				<tfoot>
                   <tr>
                     <td style="text-align: center">&nbsp;</td>
